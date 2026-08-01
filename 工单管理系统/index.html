@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>工单管理系统</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- PC 端容器 -->
+  <div id="pc-app" class="pc-app">
+    <header class="app-header">
+      <div class="brand"><span class="logo">工</span><span>工单管理系统</span></div>
+      <nav class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab" data-page="overview">概览</button>
+        <button class="nav-tab" data-page="kanban">看板</button>
+        <button class="nav-tab" data-page="list">工单列表</button>
+        <button class="nav-tab" data-page="recycle">回收站</button>
+        <button class="nav-tab" data-page="log">操作日志</button>
+      </nav>
+      <div class="header-right">
+        <span id="sync-indicator" class="sync-indicator" style="display:none" title="同步状态"><span class="dot"></span><span class="label">同步</span></span>
+        <button class="btn btn-ghost" id="sync-now-btn" style="display:none" title="立即把本地数据推送到 Supabase">↻ 立即同步</button>
+        <div class="role-switch">
+          <label>角色</label>
+          <select id="role-select">
+            <option value="admin">管理员</option>
+            <option value="assignee">处理员</option>
+          </select>
+          <label>当前用户</label>
+          <select id="user-select"></select>
+        </div>
+        <button class="btn btn-primary" id="new-ticket-btn">+ 新建工单</button>
+        <a class="btn btn-ghost" href="#/m">移动端</a>
+      </div>
+    </header>
+    <main class="main" id="pc-main"></main>
+  </div>
+
+  <!-- 移动 H5 容器 -->
+  <div id="mobile-app" class="mobile-app" style="display:none"></div>
+
+  <!-- 弹窗与提示挂载点 -->
+  <div id="modal-root"></div>
+  <div id="toast" class="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="sync.js"></script>
+  <script src="app.js"></script>
+  <script src="mobile.js"></script>
+</body>
+</html>
