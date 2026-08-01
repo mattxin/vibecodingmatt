@@ -12,6 +12,31 @@
   };
 
   WOMS.STORAGE_KEY = "woms_data_v1";
+  // 网格枚举升级迁移：把旧 5 个网格映射到新 12 个
+  // 默认按地理方向映射：城东→龙华东、城西→龙华西、城南→龙华南、
+  // 城北→美兰北、中心→美兰中。如需调整直接改这张表即可。
+  var GRID_MIGRATION = {
+    "城东网格": "龙华东网格",
+    "城西网格": "龙华西网格",
+    "城南网格": "龙华南网格",
+    "城北网格": "美兰北网格",
+    "中心网格": "美兰中网格"
+  };
+
+  function migrateGrids(data) {
+    var map = GRID_MIGRATION;
+    var changed = 0;
+    function fix(arr) {
+      if (!arr) return;
+      arr.forEach(function (t) {
+        if (t && map[t.grid]) { t.grid = map[t.grid]; changed++; }
+      });
+    }
+    fix(data.tickets);
+    fix(data.recycle);
+    return changed;
+  }
+
 
   WOMS.STATUS_META = {
     "待分配": { color: "#6b7280", bg: "#f3f4f6" },
@@ -125,6 +150,11 @@
         var parsed = JSON.parse(raw);
         if (parsed && parsed.tickets) {
           if (!parsed.recycle) parsed.recycle = [];
+          // 数据已从 localStorage 拿到；尝试网格枚举迁移
+          var n = migrateGrids(parsed);
+          if (n > 0) {
+            try { console.log("[WOMS] migrated " + n + " ticket grid name(s) to new enum"); save(parsed); } catch (e) {}
+          }
           return parsed;
         }
       }
