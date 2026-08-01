@@ -228,7 +228,6 @@ tbody tr:last-child td { border-bottom: none; }
 .m-header .title { font-size: 17px; font-weight: 700; }
 .m-header .back { color: #fff; background: rgba(255,255,255,.18); border: none; width: 32px; height: 32px; border-radius: 8px; font-size: 18px; }
 .m-header .spacer { flex: 1; }
-.m-header .pc-link { color: #fff; font-size: 13px; opacity: .9; }
 
 .m-filters { padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #fff; border-bottom: 1px solid var(--border); }
 .m-filter-row { display: flex; flex-direction: column; gap: 4px; }

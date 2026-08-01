@@ -90,7 +90,6 @@
       '<div class="m-header">' +
         '<span class="title">工单查询</span>' +
         '<span class="spacer"></span>' +
-        '<a class="pc-link" href="#/">PC端</a>' +
       '</div>' +
       '<div class="m-filters">' +
         '<div class="m-filter-row"><label>工单类型</label><select id="mf-type">' + opt(f.type, WOMS.ENUMS.types, "全部类型") + '</select></div>' +
