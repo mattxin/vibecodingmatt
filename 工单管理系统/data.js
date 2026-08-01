@@ -7,36 +7,11 @@
     types: ["故障报修", "投诉建议", "安装开通", "日常巡检", "其他"],
     statuses: ["待分配", "处理中", "已完成", "已驳回", "已关闭"],
     priorities: ["高", "中", "低"],
-    grids: ["龙华东网格", "龙华西网格", "龙华南网格", "美兰中网格", "美兰南网格", "美兰北网格", "琼山北网格", "琼山南网格", "东部乡镇网格", "秀英东网格", "秀英西网格", "西部乡镇网格"],
+    grids: ["城东网格", "城西网格", "城南网格", "城北网格", "中心网格"],
     assignees: ["张伟", "李娜", "王强", "刘洋", "陈静"]
   };
 
   WOMS.STORAGE_KEY = "woms_data_v1";
-  // 网格枚举升级迁移：把旧 5 个网格映射到新 12 个
-  // 默认按地理方向映射：城东→龙华东、城西→龙华西、城南→龙华南、
-  // 城北→美兰北、中心→美兰中。如需调整直接改这张表即可。
-  var GRID_MIGRATION = {
-    "城东网格": "龙华东网格",
-    "城西网格": "龙华西网格",
-    "城南网格": "龙华南网格",
-    "城北网格": "美兰北网格",
-    "中心网格": "美兰中网格"
-  };
-
-  function migrateGrids(data) {
-    var map = GRID_MIGRATION;
-    var changed = 0;
-    function fix(arr) {
-      if (!arr) return;
-      arr.forEach(function (t) {
-        if (t && map[t.grid]) { t.grid = map[t.grid]; changed++; }
-      });
-    }
-    fix(data.tickets);
-    fix(data.recycle);
-    return changed;
-  }
-
 
   WOMS.STATUS_META = {
     "待分配": { color: "#6b7280", bg: "#f3f4f6" },
@@ -128,18 +103,18 @@
       tickets.push(t);
       return t;
     }
-    mk({ type: "故障报修", status: "待分配", priority: "高", acc: "KH00128", grid: "龙华东网格", addr: "城东区幸福路88号", date: "2026-07-31", desc: "用户家中宽带无法上网，指示灯红灯闪烁", tel: "13800001234" });
-    mk({ type: "投诉建议", status: "待分配", priority: "中", acc: "KH00211", grid: "美兰中网格", addr: "城西区和平街12栋", date: "2026-07-31", desc: "用户投诉安装人员上门迟到", tel: "13900002222" });
-    mk({ type: "安装开通", status: "处理中", priority: "中", acc: "KH00345", asg: "张伟", grid: "美兰北网格", addr: "城南科技园B栋501", date: "2026-07-30", desc: "新装千兆宽带及IPTV", tel: "13700003333", flow: [{ time: "2026-07-30T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给张伟处理" }] });
-    mk({ type: "故障报修", status: "处理中", priority: "高", acc: "KH00456", asg: "李娜", grid: "东部乡镇网格", addr: "城北大道218号", date: "2026-07-30", desc: "IPTV频繁卡顿，已重启未解决", tel: "13600004444", flow: [{ time: "2026-07-30T11:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给李娜处理" }] });
-    mk({ type: "日常巡检", status: "处理中", priority: "低", acc: "KH00567", asg: "王强", grid: "秀英西网格", addr: "中心机房3号", date: "2026-07-29", desc: "季度机房设备巡检", tel: "13500005555", flow: [{ time: "2026-07-29T09:30:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给王强处理" }] });
-    mk({ type: "故障报修", status: "已完成", priority: "高", acc: "KH00678", asg: "张伟", grid: "龙华西网格", addr: "城东区光明路1号", date: "2026-07-28", desc: "光纤断裂已修复", tel: "13800006666", updateTime: "2026-07-28T15:00:00.000Z", flow: [{ time: "2026-07-28T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给张伟" }, { time: "2026-07-28T15:00:00.000Z", op: "张伟", from: "处理中", to: "已完成", note: "现场重新熔接光纤，测试正常" }] });
-    mk({ type: "安装开通", status: "已完成", priority: "中", acc: "KH00789", asg: "刘洋", grid: "美兰南网格", addr: "城西区花园小区5栋", date: "2026-07-27", desc: "宽带新装完成", tel: "13900007777", updateTime: "2026-07-27T16:00:00.000Z", flow: [{ time: "2026-07-27T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给刘洋" }, { time: "2026-07-27T16:00:00.000Z", op: "刘洋", from: "处理中", to: "已完成", note: "完成光猫配置与测速，达标" }] });
-    mk({ type: "投诉建议", status: "已驳回", priority: "低", acc: "KH00890", asg: "陈静", grid: "琼山北网格", addr: "城南商贸城", date: "2026-07-26", desc: "投诉资费问题", tel: "13700008888", updateTime: "2026-07-26T17:00:00.000Z", flow: [{ time: "2026-07-26T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给陈静" }, { time: "2026-07-26T17:00:00.000Z", op: "陈静", from: "处理中", to: "已驳回", note: "经核实资费无误，已向用户解释" }] });
-    mk({ type: "故障报修", status: "已驳回", priority: "中", acc: "KH00901", asg: "李娜", grid: "秀英东网格", addr: "城北新村", date: "2026-07-25", desc: "疑似伪故障", tel: "13600009999", updateTime: "2026-07-25T18:00:00.000Z", flow: [{ time: "2026-07-25T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给李娜" }, { time: "2026-07-25T18:00:00.000Z", op: "李娜", from: "处理中", to: "已驳回", note: "多次联系用户无人接听，无法核实" }] });
-    mk({ type: "日常巡检", status: "已关闭", priority: "低", acc: "KH00102", asg: "王强", grid: "西部乡镇网格", addr: "中心机房1号", date: "2026-07-20", desc: "月度巡检归档", tel: "13500001010", updateTime: "2026-07-21T09:00:00.000Z", flow: [{ time: "2026-07-20T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给王强" }, { time: "2026-07-20T14:00:00.000Z", op: "王强", from: "处理中", to: "已完成", note: "巡检完成，设备正常" }, { time: "2026-07-21T09:00:00.000Z", op: "系统管理员", from: "已完成", to: "已关闭", note: "归档" }] });
-    mk({ type: "其他", status: "已关闭", priority: "低", acc: "KH00113", asg: "张伟", grid: "龙华南网格", addr: "城东区", date: "2026-07-18", desc: "咨询业务已解答", tel: "13800011111", updateTime: "2026-07-19T09:00:00.000Z", flow: [{ time: "2026-07-18T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给张伟" }, { time: "2026-07-18T11:00:00.000Z", op: "张伟", from: "处理中", to: "已完成", note: "已解答用户咨询" }, { time: "2026-07-19T09:00:00.000Z", op: "系统管理员", from: "已完成", to: "已关闭", note: "归档" }] });
-    mk({ type: "故障报修", status: "处理中", priority: "高", acc: "KH00124", asg: "刘洋", grid: "琼山南网格", addr: "城南高新路9号", date: "2026-07-31", desc: "企业专线丢包", tel: "13700012222", flow: [{ time: "2026-07-31T08:30:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给刘洋处理" }] });
+    mk({ type: "故障报修", status: "待分配", priority: "高", acc: "KH00128", grid: "城东网格", addr: "城东区幸福路88号", date: "2026-07-31", desc: "用户家中宽带无法上网，指示灯红灯闪烁", tel: "13800001234" });
+    mk({ type: "投诉建议", status: "待分配", priority: "中", acc: "KH00211", grid: "城西网格", addr: "城西区和平街12栋", date: "2026-07-31", desc: "用户投诉安装人员上门迟到", tel: "13900002222" });
+    mk({ type: "安装开通", status: "处理中", priority: "中", acc: "KH00345", asg: "张伟", grid: "城南网格", addr: "城南科技园B栋501", date: "2026-07-30", desc: "新装千兆宽带及IPTV", tel: "13700003333", flow: [{ time: "2026-07-30T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给张伟处理" }] });
+    mk({ type: "故障报修", status: "处理中", priority: "高", acc: "KH00456", asg: "李娜", grid: "城北网格", addr: "城北大道218号", date: "2026-07-30", desc: "IPTV频繁卡顿，已重启未解决", tel: "13600004444", flow: [{ time: "2026-07-30T11:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给李娜处理" }] });
+    mk({ type: "日常巡检", status: "处理中", priority: "低", acc: "KH00567", asg: "王强", grid: "中心网格", addr: "中心机房3号", date: "2026-07-29", desc: "季度机房设备巡检", tel: "13500005555", flow: [{ time: "2026-07-29T09:30:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给王强处理" }] });
+    mk({ type: "故障报修", status: "已完成", priority: "高", acc: "KH00678", asg: "张伟", grid: "城东网格", addr: "城东区光明路1号", date: "2026-07-28", desc: "光纤断裂已修复", tel: "13800006666", updateTime: "2026-07-28T15:00:00.000Z", flow: [{ time: "2026-07-28T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给张伟" }, { time: "2026-07-28T15:00:00.000Z", op: "张伟", from: "处理中", to: "已完成", note: "现场重新熔接光纤，测试正常" }] });
+    mk({ type: "安装开通", status: "已完成", priority: "中", acc: "KH00789", asg: "刘洋", grid: "城西网格", addr: "城西区花园小区5栋", date: "2026-07-27", desc: "宽带新装完成", tel: "13900007777", updateTime: "2026-07-27T16:00:00.000Z", flow: [{ time: "2026-07-27T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给刘洋" }, { time: "2026-07-27T16:00:00.000Z", op: "刘洋", from: "处理中", to: "已完成", note: "完成光猫配置与测速，达标" }] });
+    mk({ type: "投诉建议", status: "已驳回", priority: "低", acc: "KH00890", asg: "陈静", grid: "城南网格", addr: "城南商贸城", date: "2026-07-26", desc: "投诉资费问题", tel: "13700008888", updateTime: "2026-07-26T17:00:00.000Z", flow: [{ time: "2026-07-26T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给陈静" }, { time: "2026-07-26T17:00:00.000Z", op: "陈静", from: "处理中", to: "已驳回", note: "经核实资费无误，已向用户解释" }] });
+    mk({ type: "故障报修", status: "已驳回", priority: "中", acc: "KH00901", asg: "李娜", grid: "城北网格", addr: "城北新村", date: "2026-07-25", desc: "疑似伪故障", tel: "13600009999", updateTime: "2026-07-25T18:00:00.000Z", flow: [{ time: "2026-07-25T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给李娜" }, { time: "2026-07-25T18:00:00.000Z", op: "李娜", from: "处理中", to: "已驳回", note: "多次联系用户无人接听，无法核实" }] });
+    mk({ type: "日常巡检", status: "已关闭", priority: "低", acc: "KH00102", asg: "王强", grid: "中心网格", addr: "中心机房1号", date: "2026-07-20", desc: "月度巡检归档", tel: "13500001010", updateTime: "2026-07-21T09:00:00.000Z", flow: [{ time: "2026-07-20T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给王强" }, { time: "2026-07-20T14:00:00.000Z", op: "王强", from: "处理中", to: "已完成", note: "巡检完成，设备正常" }, { time: "2026-07-21T09:00:00.000Z", op: "系统管理员", from: "已完成", to: "已关闭", note: "归档" }] });
+    mk({ type: "其他", status: "已关闭", priority: "低", acc: "KH00113", asg: "张伟", grid: "城东网格", addr: "城东区", date: "2026-07-18", desc: "咨询业务已解答", tel: "13800011111", updateTime: "2026-07-19T09:00:00.000Z", flow: [{ time: "2026-07-18T10:00:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给张伟" }, { time: "2026-07-18T11:00:00.000Z", op: "张伟", from: "处理中", to: "已完成", note: "已解答用户咨询" }, { time: "2026-07-19T09:00:00.000Z", op: "系统管理员", from: "已完成", to: "已关闭", note: "归档" }] });
+    mk({ type: "故障报修", status: "处理中", priority: "高", acc: "KH00124", asg: "刘洋", grid: "城南网格", addr: "城南高新路9号", date: "2026-07-31", desc: "企业专线丢包", tel: "13700012222", flow: [{ time: "2026-07-31T08:30:00.000Z", op: "系统管理员", from: "待分配", to: "处理中", note: "分配给刘洋处理" }] });
     return { tickets: tickets, recycle: [] };
   }
 
@@ -150,11 +125,6 @@
         var parsed = JSON.parse(raw);
         if (parsed && parsed.tickets) {
           if (!parsed.recycle) parsed.recycle = [];
-          // 数据已从 localStorage 拿到；尝试网格枚举迁移
-          var n = migrateGrids(parsed);
-          if (n > 0) {
-            try { console.log("[WOMS] migrated " + n + " ticket grid name(s) to new enum"); save(parsed); } catch (e) {}
-          }
           return parsed;
         }
       }
