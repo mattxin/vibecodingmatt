@@ -18,7 +18,7 @@
     var h = {
       "Content-Type": "application/json",
       "apikey": KEY,
-      "Authorization": "Bearer " + KEY,
+      "Authorization": "Bearer " + ((WOMS.auth && WOMS.auth.accessToken && WOMS.auth.accessToken()) || KEY),
       "Prefer": "return=representation"
     };
     if (extra) for (var k in extra) h[k] = extra[k];

@@ -104,6 +104,7 @@
   function route() {
     var hash = location.hash || "#/";
     if (hash.indexOf("#/m") === 0) { showMobile(); return; }
+    if (WOMS.auth && !WOMS.auth.isLoggedIn()) { showLogin(); return; }
     showPC();
     if (hash === "#/kanban") setPage("kanban", true);
     else if (hash === "#/list") setPage("list", true);
@@ -112,14 +113,22 @@
     else setPage("overview", true);
   }
   function showPC() {
+    var lv = $("#login-view"); if (lv) lv.style.display = "none";
     $("#pc-app").style.display = "";
     $("#mobile-app").style.display = "none";
     syncHeaderRole();
   }
   function showMobile() {
+    var lv = $("#login-view"); if (lv) lv.style.display = "none";
     $("#pc-app").style.display = "none";
     $("#mobile-app").style.display = "";
     if (WOMS.mobile) WOMS.mobile.render();
+  }
+  function showLogin() {
+    $("#pc-app").style.display = "none";
+    $("#mobile-app").style.display = "none";
+    var lv = $("#login-view");
+    if (lv) { lv.style.display = ""; bindLogin(); }
   }
 
   function setPage(page, fromRoute) {
@@ -145,12 +154,9 @@
     return opts.join("");
   }
   function syncHeaderRole() {
-    var rs = $("#role-select"), us = $("#user-select");
-    if (!rs) return;
-    rs.value = WOMS.role;
-    if (!us.dataset.built) { us.innerHTML = buildUserOptions(); us.dataset.built = "1"; }
-    us.value = WOMS.currentUser;
-    us.style.display = WOMS.role === "assignee" ? "" : "none";
+    var sr = $("#session-role"), su = $("#session-user");
+    if (sr) sr.textContent = WOMS.role === "admin" ? "管理员" : "处理员";
+    if (su) su.textContent = WOMS.currentUser || "";
     var nb = $("#new-ticket-btn");
     if (nb) nb.style.display = canCreate() ? "" : "none";
   }
@@ -971,7 +977,62 @@
   }
 
   // ---------- init ----------
+  var bound = false;
+  function bindLogin() {
+    var form = $("#login-form");
+    if (!form) return;
+    if (form.dataset.bound) { var u0 = $("#login-username"); if (u0) u0.focus(); return; }
+    form.dataset.bound = "1";
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var u = ($("#login-username").value || "").trim();
+      var p = $("#login-password").value || "";
+      var err = $("#login-error");
+      var btn = form.querySelector(".login-submit");
+      if (btn) btn.disabled = true;
+      if (err) err.textContent = "";
+      WOMS.auth.login(u, p).then(function (res) {
+        if (btn) btn.disabled = false;
+        if (!res.ok) { if (err) err.textContent = res.msg || "登录失败"; return; }
+        $("#login-password").value = "";
+        var lv = $("#login-view"); if (lv) lv.style.display = "none";
+        init();
+      }).catch(function () {
+        if (btn) btn.disabled = false;
+        if (err) err.textContent = "网络错误，无法连接认证服务";
+      });
+    });
+    var u0 = $("#login-username"); if (u0) u0.focus();
+  }
+
   function init() {
+    var hash = location.hash || "#/";
+    if (hash.indexOf("#/m") === 0) { enterMobile(); return; }
+    var s = WOMS.auth ? WOMS.auth.applySession() : null;
+    if (WOMS.auth && !s) { showLogin(); return; }
+    if (WOMS.auth && s) {
+      setSyncIndicator(WOMS.sync && WOMS.sync.enabled ? "syncing" : "offline");
+      WOMS.auth.verifySession().then(function (v) {
+        if (!v) { showLogin(); return; }
+        enterPC(v.offline);
+      });
+      return;
+    }
+    enterPC(false);
+  }
+
+  function enterMobile() {
+    showMobile();
+    if (WOMS.sync && WOMS.sync.enabled && !state.mobileSynced) {
+      state.mobileSynced = true;
+      WOMS.sync.loadRemote().then(function (d) {
+        if (d) { state.data = d; if (WOMS.mobile) WOMS.mobile.render(); }
+      });
+    }
+  }
+
+  function enterPC(offline) {
+    state.offline = !!offline;
     reload();
     if (WOMS.sync && WOMS.sync.enabled) {
       setSyncIndicator("syncing");
@@ -980,43 +1041,37 @@
         else { setSyncIndicator("error"); }
       });
     }
-    $all("#nav-tabs .nav-tab").forEach(function (t) {
-      t.addEventListener("click", function () {
-        var p = t.dataset.page;
-        location.hash = p === "overview" ? "#/" : ("#/" + p);
+    if (!bound) {
+      bound = true;
+      $all("#nav-tabs .nav-tab").forEach(function (t) {
+        t.addEventListener("click", function () {
+          var p = t.dataset.page;
+          location.hash = p === "overview" ? "#/" : ("#/" + p);
+        });
       });
-    });
-    var nb = $("#new-ticket-btn");
-    if (nb) nb.addEventListener("click", function () { openTicketForm("create"); });
-    var snb = $("#sync-now-btn");
-    if (snb) snb.addEventListener("click", function () {
-      if (!WOMS.sync || !WOMS.sync.enabled) { toast("同步未启用"); return; }
-      snb.disabled = true;
-      setSyncIndicator("syncing");
-      WOMS.sync.pushNow().then(function (ok) {
-        snb.disabled = false;
-        if (ok) { toast("同步完成"); setSyncIndicator("online"); }
-        else { toast("同步失败，查看控制台", true); setSyncIndicator("error"); }
+      var nb = $("#new-ticket-btn");
+      if (nb) nb.addEventListener("click", function () { openTicketForm("create"); });
+      var snb = $("#sync-now-btn");
+      if (snb) snb.addEventListener("click", function () {
+        if (!WOMS.sync || !WOMS.sync.enabled) { toast("同步未启用"); return; }
+        snb.disabled = true;
+        setSyncIndicator("syncing");
+        WOMS.sync.pushNow().then(function (ok) {
+          snb.disabled = false;
+          if (ok) { toast("同步完成"); setSyncIndicator("online"); }
+          else { toast("同步失败，查看控制台", true); setSyncIndicator("error"); }
+        });
       });
-    });
+      var lb = $("#logout-btn");
+      if (lb) lb.addEventListener("click", function () {
+        var done = function () { showLogin(); };
+        if (WOMS.auth && WOMS.auth.logout) WOMS.auth.logout().then(done);
+        else done();
+      });
+      window.addEventListener("hashchange", route);
+    }
     setSyncIndicator(WOMS.sync && WOMS.sync.enabled ? "online" : "offline");
-    var rs = $("#role-select");
-    if (rs) rs.addEventListener("change", function () {
-      WOMS.role = rs.value;
-      if (WOMS.role === "admin") WOMS.currentUser = "系统管理员";
-      else if (WOMS.currentUser === "系统管理员") WOMS.currentUser = WOMS.ENUMS.assignees[0];
-      syncHeaderRole();
-      renderPage();
-    });
-    var us = $("#user-select");
-    if (us) us.addEventListener("change", function () {
-      WOMS.currentUser = us.value;
-      WOMS.role = us.value === "系统管理员" ? "admin" : "assignee";
-      syncHeaderRole();
-      renderPage();
-    });
     syncHeaderRole();
-    window.addEventListener("hashchange", route);
     route();
   }
 

@@ -260,3 +260,84 @@ tbody tr:last-child td { border-bottom: none; }
   .header-right .role-switch label { display: none; }
   .main { padding: 14px; }
 }
+/* ---------- 登录页 ---------- */
+.login-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F5F6F8;
+  padding: 24px;
+  box-sizing: border-box;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(43,43,255,0.10);
+  padding: 40px 32px;
+  box-sizing: border-box;
+}
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2233;
+  justify-content: center;
+}
+.login-brand .logo {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: #2B2BFF;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.login-sub {
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+  margin: 8px 0 24px;
+}
+.login-form { display: flex; flex-direction: column; gap: 16px; }
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+.login-field > span { font-size: 13px; color: #4b5563; font-weight: 600; }
+.login-field input {
+  height: 44px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+.login-field input:focus { border-color: #2B2BFF; box-shadow: 0 0 0 3px rgba(43,43,255,0.12); }
+.login-error { color: #dc2626; font-size: 13px; min-height: 18px; }
+.login-submit { height: 46px; font-size: 15px; margin-top: 4px; }
+.login-hint {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.6;
+}
+
+/* ---------- 会话信息 ---------- */
+.session-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.session-role {
+  background: rgba(43,43,255,0.1);
+  color: #2B2BFF;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.session-user { color: #4b5563; font-weight: 600; }
