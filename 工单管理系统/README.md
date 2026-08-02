@@ -40,15 +40,21 @@ WOMS.data.reset()
 默认是纯 localStorage 离线模式。如果要多人共享数据，可以把数据存到 Supabase。
 
 ### 配置
-1. 复制 `config.example.js` 为 `config.js`，填入你的 Supabase URL 和 anon key：
-   ```js
-   window.WOMS_CONFIG = {
-     supabaseUrl: "https://<your-project>.supabase.co",
-     supabaseKey: "<your-anon-key>"
-   };
+1. 在本目录复制环境变量模板：
+   ```powershell
+   Copy-Item .env.example .env
    ```
-   `config.js` 已在 `.gitignore` 里，不会进 commit。
-2. 在 Supabase SQL 编辑器建表（最小 schema）：
+2. 只在 `.env` 中填写 Supabase 配置：
+   ```dotenv
+   SUPABASE_URL=https://your-project-ref.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+3. 生成浏览器可读取的本地配置：
+   ```powershell
+   node tools/sync-env.js
+   ```
+   脚本会生成 `config.local.js`；`.env` 和 `config.local.js` 均已忽略，禁止提交。以后修改 `.env` 后重新运行此命令。
+4. 在 Supabase SQL 编辑器建表（最小 schema）：
    ```sql
    create table public.tickets (
      id text primary key,
@@ -61,13 +67,15 @@ WOMS.data.reset()
      deleted boolean default false, "deletedAt" text, "deletedBy" text
    );
    ```
-3. 打开页面，右上角出现「云端已连接」绿点和「↻ 立即同步」按钮即配置成功。
+5. 打开页面，右上角出现「云端已连接」绿点和「↻ 立即同步」按钮即配置成功。
+
+Vercel 部署时，在项目环境变量中配置同名的 `SUPABASE_URL` 和 `SUPABASE_ANON_KEY`，并把构建命令设为 `node tools/sync-env.js`。如果 Vercel 项目根目录是仓库根目录，则使用 `node 工单管理系统/tools/sync-env.js`。纯静态 HTML 不会自动读取 Vercel 环境变量，必须执行生成脚本。
 
 ### 行为
 - **加载**：页面打开时先从 Supabase 拉取，失败则退回 localStorage。
 - **写入**：所有 `WOMS.data.*` 写操作都会异步同步到 Supabase（fire-and-forget），失败只控制台报错，不影响本地流程。
 - **手动同步**：点「↻ 立即同步」按钮，把本地所有工单推送到 Supabase（覆盖式 upsert）。
-- **离线降级**：未配置 `config.js` 或网络不通时，自动退回纯 localStorage 模式（隐藏同步指示器/按钮）。
+- **离线降级**：未生成 `config.local.js` 或网络不通时，自动退回纯 localStorage 模式（隐藏同步指示器/按钮）。
 
 ### 控制台 API
 ```js
@@ -79,6 +87,7 @@ WOMS.sync.pushNow()       // 推送当前 localStorage 全部数据
 所有同步操作都打 `[SYNC]` 前缀的日志（OK / FAIL），打开 DevTools Console 即可追踪。
 
 ### 注意
+- Supabase anon key 会随前端请求对浏览器可见，`.env` 只能避免误提交，不能把前端 key 变成秘密；数据安全必须依赖 Supabase RLS 策略。
 - `history` 是 JSONB 列，写入的是数组（不是字符串化的 JSON），否则会 400。
 - `on_conflict=id` 要求 `id` 是主键或唯一约束。
 - 多人同时编辑同一工单时，最后一次 upsert 胜出，没有版本合并。

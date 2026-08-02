@@ -1,1 +1,6 @@
-# Supabase anon key ÊÇ¹«¿ªµÄ£¨Éè¼ÆÉÏÇ°¶ËÒªÓÃ£©£¬config.js ²»ÔÙºöÂÔ
+ï»¿# Supabase å‡­æ®èµ° .env ç®¡ç†ï¼ˆkey è™½å…¬å¼€ï¼Œä½†èµ° .env æ›´è§„èŒƒï¼‰
+.env
+.env.*
+!.env.example
+config.local.js
+*.local
