@@ -14,12 +14,12 @@
 - `data.js` — 数据层：枚举、存储、种子数据、CRUD、状态流转。
 - `app.js` — PC 端逻辑：路由、看板、列表、详情、表单、看板概览、状态流转。
 - `mobile.js` — 移动 H5 逻辑：按 类型/状态/处理人 只读查询。
-- `config.js` — 可提交的空配置兜底，不得写入真实 Supabase 配置。
-- `config.local.js` — 由 `.env` 生成的浏览器运行时配置，禁止提交。
-- `.env` — 本地 Supabase 配置唯一来源，禁止提交。
-- `.env.example` — 可提交的环境变量模板，只允许占位值。
+- `config.js` — 提交进仓库，内含 Supabase URL + anon key（anon key 公开，静态部署无法靠 .env 注入，必须提交）。
+- `config.local.js` — 原为 `.env` 输出产物，已停用，index.html 不再加载。若本地需覆盖，直接编辑 `config.js` 即可。
+- `.env` — 选项：若未来加入构建步骤可重新启用；目前项目无构建，`.env` 不被加载。
+- `.env.example` — 环境变量模板（供未来构建步骤使用）。
 - `tools/` — 无第三方依赖的本地维护脚本。
-- `tools/sync-env.js` — 将 `.env` 或进程环境变量安全生成到 `config.local.js`。
+- `tools/sync-env.js` — 将 `.env` 生成到 `config.local.js` 的脚手脚本。目前项目无构建步骤，index.html 不加载 `config.local.js`，该脚本暂无用。
 - `AGENTS.md` — 本文件。
 - `README.md` — 使用说明。
 
@@ -44,5 +44,5 @@
 - 改完用无头浏览器打开 `file://` 路径做冒烟测试，确认 PC 与移动端均能渲染。
 - 不要为让代码跑起来而注释掉报错或加绕过；找根本原因。
 - 不要引入新的外部依赖。
-- Supabase 配置只维护在 `.env` 或部署平台环境变量中；修改后运行 `node tools/sync-env.js`，禁止手工编辑 `config.local.js`。
+- Supabase 配置直接写在 `config.js`（anon key 公开）。如未来引入构建步骤再启用 `.env` + `tools/sync-env.js`。
 - 配置脚本不得打印 URL 对应的密钥值，也不得把真实配置写入可提交文件。
