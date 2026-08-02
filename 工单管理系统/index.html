@@ -11,7 +11,11 @@
   <div id="login-view" class="login-view" style="display:none">
     <div class="login-card">
       <div class="login-brand"><span class="logo">工</span><span>工单管理系统</span></div>
-      <p class="login-sub">请登录后使用</p>
+      <div class="auth-tabs" id="auth-tabs">
+        <button type="button" class="auth-tab active" data-tab="login">登录</button>
+        <button type="button" class="auth-tab" data-tab="register">注册</button>
+      </div>
+      <p class="login-sub" id="auth-sub">请登录后使用</p>
       <form id="login-form" class="login-form" autocomplete="off">
         <label class="login-field">
           <span>账号</span>
@@ -24,7 +28,28 @@
         <div id="login-error" class="login-error"></div>
         <button type="submit" class="btn btn-primary login-submit">登录</button>
       </form>
-      <div class="login-hint">管理员 admin / admin123　·　处理员 zhangwei·lina·wangqiang·liuyang·chenjing / 123456</div>
+      <form id="register-form" class="login-form" autocomplete="off" style="display:none">
+        <label class="login-field">
+          <span>姓名 <span class="req">*</span></span>
+          <input id="reg-name" type="text" placeholder="例：张三" autocomplete="off" />
+        </label>
+        <label class="login-field">
+          <span>账号 <span class="req">*</span></span>
+          <input id="reg-account" type="text" placeholder="登录用账号（自动加 @woms.cn）" autocomplete="off" />
+        </label>
+        <label class="login-field">
+          <span>密码 <span class="req">*</span></span>
+          <input id="reg-password" type="password" placeholder="至少 6 位" autocomplete="off" />
+        </label>
+        <label class="login-field">
+          <span>确认密码 <span class="req">*</span></span>
+          <input id="reg-password2" type="password" placeholder="再输一次密码" autocomplete="off" />
+        </label>
+        <div id="register-error" class="login-error"></div>
+        <div id="register-ok" class="login-ok" style="display:none"></div>
+        <button type="submit" class="btn btn-primary login-submit">注册</button>
+      </form>
+      <div class="login-hint" id="login-hint">管理员 admin / admin123　·　处理员 zhangwei·lina·wangqiang·liuyang·chenjing / 123456</div>
     </div>
   </div>
   <!-- PC 端容器 -->

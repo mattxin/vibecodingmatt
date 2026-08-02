@@ -150,7 +150,7 @@
   // ---------- header / role ----------
   function buildUserOptions() {
     var opts = ['<option value="系统管理员">系统管理员</option>'];
-    WOMS.ENUMS.assignees.forEach(function (a) { opts.push('<option value="' + escapeHtml(a) + '">' + escapeHtml(a) + '</option>'); });
+    getAssignees().forEach(function (a) { opts.push('<option value="' + escapeHtml(a) + '">' + escapeHtml(a) + '</option>'); });
     return opts.join("");
   }
   function syncHeaderRole() {
@@ -182,7 +182,7 @@
     var gridOpts = ['<option value="">全部网格</option>'].concat(WOMS.ENUMS.grids.map(function (g) {
       return '<option value="' + escapeHtml(g) + '"' + (state.dashFilters.grid === g ? " selected" : "") + '>' + escapeHtml(g) + '</option>';
     }));
-    var asgOpts = ['<option value="">全部处理人</option>'].concat(WOMS.ENUMS.assignees.map(function (a) {
+    var asgOpts = ['<option value="">全部处理人</option>'].concat(getAssignees().map(function (a) {
       return '<option value="' + escapeHtml(a) + '"' + (state.dashFilters.assignee === a ? " selected" : "") + '>' + escapeHtml(a) + '</option>';
     }));
 
@@ -431,7 +431,7 @@
         '<input class="input search" id="lf-kw" placeholder="搜索编号/账号/地址/描述/处理人" value="' + escapeHtml(f.kw) + '" />' +
         '<select id="lf-type">' + opt(f.type, WOMS.ENUMS.types, "全部类型") + '</select>' +
         '<select id="lf-status">' + opt(f.status, WOMS.ENUMS.statuses, "全部状态") + '</select>' +
-        '<select id="lf-assignee">' + opt(f.assignee, WOMS.ENUMS.assignees, "全部处理人") + '</select>' +
+        '<select id="lf-assignee">' + opt(f.assignee, getAssignees(), "全部处理人") + '</select>' +
         '<select id="lf-grid">' + opt(f.grid, WOMS.ENUMS.grids, "全部网格") + '</select>' +
         '<select id="lf-priority">' + opt(f.priority, WOMS.ENUMS.priorities, "全部优先级") + '</select>' +
         '<button class="btn btn-sm" id="lf-reset">重置</button>' +
@@ -526,7 +526,7 @@
             field("类型", '<select id="f-type">' + selectHtml(t.type || WOMS.ENUMS.types[0], WOMS.ENUMS.types) + '</select>', "f-type-err", true) +
             field("优先级", '<select id="f-priority">' + selectHtml(t.priority || "中", WOMS.ENUMS.priorities) + '</select>', "f-priority-err", true) +
             field("所属网格", '<select id="f-grid">' + selectHtml(t.grid || "", WOMS.ENUMS.grids) + '</select>', "f-grid-err", true) +
-            field("归属处理人", '<select id="f-assignee">' + selectHtml(t.assignee || "", WOMS.ENUMS.assignees, "待分配（不选）") + '</select>', "f-assignee-err", false) +
+            field("归属处理人", '<select id="f-assignee">' + selectHtml(t.assignee || "", getAssignees(), "待分配（不选）") + '</select>', "f-assignee-err", false) +
             field("客户账号", '<input class="input" id="f-account" value="' + escapeHtml(t.customerAccount || "") + '" />', "f-account-err", true) +
             field("客户联系方式", '<input class="input" id="f-contact" value="' + escapeHtml(t.contact || "") + '" />', "f-contact-err", false) +
             field("服务地址", '<input class="input" id="f-address" value="' + escapeHtml(t.address || "") + '" />', "f-address-err", true) +
@@ -667,7 +667,7 @@
         '<div class="modal-body">' +
           '<div class="flow-row">' + escapeHtml(t.status) + ' <span class="arrow">→</span> ' + escapeHtml(to) + '</div>' +
           '<div class="field"><label class="field-label">归属处理人 <span style="color:#dc2626">*</span></label>' +
-            '<select id="a-assignee">' + selectHtml("", WOMS.ENUMS.assignees, "请选择处理人") + '</select>' +
+            '<select id="a-assignee">' + selectHtml("", getAssignees(), "请选择处理人") + '</select>' +
             '<div class="field-error" id="a-err"></div>' +
           '</div>' +
           '<div class="field" style="margin-top:14px"><label class="field-label">备注</label><textarea id="a-note" placeholder="如：分配给 XX 处理"></textarea></div>' +
@@ -977,10 +977,114 @@
   }
 
   // ---------- init ----------
+    // 动态归属处理人列表：profiles + tickets.assignee distinct + 硬编码兜底
+  // profiles 来源于 register 时的登记；旧单据上的名字保留（删除 profile 不影响旧数据归属）。
+  // 拉取失败/网络断开时回退到 getAssignees()，功能不丢。
+  var ASSIGNEE_CACHE = null;
+  function getAssignees() {
+    if (ASSIGNEE_CACHE && ASSIGNEE_CACHE.names && ASSIGNEE_CACHE.names.length) return ASSIGNEE_CACHE.names;
+    var names = [];
+    var seen = Object.create(null);
+    function add(n) {
+      n = (n || "").trim();
+      if (!n || seen[n]) return;
+      seen[n] = 1;
+      names.push(n);
+    }
+    (WOMS.ENUMS.assignees || []).forEach(add);
+    if (ASSIGNEE_CACHE && Array.isArray(ASSIGNEE_CACHE.profiles)) {
+      ASSIGNEE_CACHE.profiles.forEach(function (p) { add(p.name); });
+    }
+    try {
+      var data = WOMS.data.load();
+      (data.tickets || []).forEach(function (t) { add(t.assignee); });
+    } catch (e) {}
+    return names;
+  }
+  function refreshAssignees() {
+    if (!WOMS.auth || !WOMS.auth.listProfiles) { ASSIGNEE_CACHE = { profiles: [], names: [] }; return Promise.resolve(); }
+    return WOMS.auth.listProfiles().then(function (rows) {
+      var profiles = (rows || []).filter(function (p) { return p && p.name; });
+      ASSIGNEE_CACHE = { profiles: profiles, names: [] };
+      renderPage();
+    }).catch(function () { ASSIGNEE_CACHE = { profiles: [], names: [] }; });
+  }
+
   var bound = false;
+  function bindAuthTabs() {
+    var tabs = $all("#auth-tabs .auth-tab");
+    var loginForm = $("#login-form"), regForm = $("#register-form");
+    var sub = $("#auth-sub"), hint = $("#login-hint");
+    tabs.forEach(function (t) {
+      if (t.dataset.bound) return;
+      t.dataset.bound = "1";
+      t.addEventListener("click", function () {
+        tabs.forEach(function (x) { x.classList.toggle("active", x === t); });
+        var mode = t.dataset.tab;
+        if (mode === "register") {
+          loginForm.style.display = "none";
+          regForm.style.display = "";
+          if (sub) sub.textContent = "注册后可登录使用";
+          if (hint) hint.style.display = "none";
+        } else {
+          loginForm.style.display = "";
+          regForm.style.display = "none";
+          if (sub) sub.textContent = "请登录后使用";
+          if (hint) hint.style.display = "";
+        }
+      });
+    });
+  }
+
+  function bindRegister() {
+    var form = $("#register-form");
+    if (!form) return;
+    if (form.dataset.bound) return;
+    form.dataset.bound = "1";
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = ($("#reg-name").value || "").trim();
+      var acct = ($("#reg-account").value || "").trim();
+      var pw = $("#reg-password").value || "";
+      var pw2 = $("#reg-password2").value || "";
+      var err = $("#register-error"), ok = $("#register-ok");
+      var btn = form.querySelector(".login-submit");
+      if (err) err.textContent = "";
+      if (ok) ok.style.display = "none";
+      if (!name || !acct || !pw || !pw2) { if (err) err.textContent = "请填写完整"; return; }
+      if (pw !== pw2) { if (err) err.textContent = "两次密码不一致"; return; }
+      if (btn) btn.disabled = true;
+      WOMS.auth.register(acct, name, pw).then(function (res) {
+        if (btn) btn.disabled = false;
+        if (!res.ok) { if (err) err.textContent = res.msg || "注册失败"; return; }
+        $("#reg-password").value = "";
+        $("#reg-password2").value = "";
+        if (res.autoLogin) {
+          if (ok) { ok.textContent = "注册成功，正在进入系统..."; ok.style.display = ""; }
+          refreshAssignees();
+          setTimeout(function () {
+            var lv = $("#login-view"); if (lv) lv.style.display = "none";
+            init();
+          }, 600);
+        } else {
+          if (ok) { ok.textContent = res.msg || "注册成功，请使用账号密码登录"; ok.style.display = ""; }
+          var loginTab = document.querySelector('#auth-tabs .auth-tab[data-tab="login"]');
+          if (loginTab) loginTab.click();
+          $("#login-username").value = acct;
+          $("#login-password").focus();
+        }
+      }).catch(function () {
+        if (btn) btn.disabled = false;
+        if (err) err.textContent = "网络错误，无法连接认证服务";
+      });
+    });
+  }
+
   function bindLogin() {
     var form = $("#login-form");
     if (!form) return;
+    bindAuthTabs();
+    bindRegister();
     if (form.dataset.bound) { var u0 = $("#login-username"); if (u0) u0.focus(); return; }
     form.dataset.bound = "1";
     form.addEventListener("submit", function (e) {
@@ -1034,6 +1138,7 @@
   function enterPC(offline) {
     state.offline = !!offline;
     reload();
+    refreshAssignees();
     if (WOMS.sync && WOMS.sync.enabled) {
       setSyncIndicator("syncing");
       WOMS.sync.loadRemote().then(function (remoteData) {

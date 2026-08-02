@@ -120,6 +120,78 @@
     return Promise.resolve(true);
   }
 
+
+  // 注册：通过 GoTrue signup 创建账号。密码由服务端校验。
+  // 触发器 on_auth_user_created 会自动在 profiles 建一条 role='assignee'、name=meta.name 的记录。
+  // 注册成功后自动登录，并把当前用户切换为新账号（不阻塞注册本身的返回）。
+  // 邮箱确认关闭时，signup 直接返回 session；否则只返回 user，需要用户去邮箱确认。
+  function signupRaw(email, password, name) {
+    if (!BASE || !KEY) return Promise.resolve({ ok: false, msg: "未配置 Supabase" });
+    return fetch(BASE + "/auth/v1/signup", {
+      method: "POST",
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        email: email,
+        password: password,
+        data: { name: name }
+      })
+    }).then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }); })
+      .then(function (res) {
+        var j = res.body || {};
+        if (j.error || j.msg) {
+          var msg = j.error_description || j.msg || j.error || "注册失败";
+          if (j.error_code === "email_exists" || /already registered/i.test(msg)) msg = "该邮箱已注册";
+          if (res.status === 422 && /password/i.test(msg)) msg = "密码太弱（至少 6 位）";
+          if (res.status === 400 && /email/i.test(msg)) msg = "邮箱格式不正确";
+          return { ok: false, msg: msg };
+        }
+        // 关闭邮箱确认时返回 access_token；开启时仅返回 user
+        if (j.access_token) {
+          var session = {
+            access_token: j.access_token,
+            refresh_token: j.refresh_token,
+            expires_at: j.expires_at,
+            user_id: (j.user && j.user.id) || "",
+            email: email,
+            account: email.split("@")[0],
+            name: name,
+            role: "assignee"
+          };
+          saveSession(session);
+          return { ok: true, session: session, autoLogin: true };
+        }
+        if (j.id || (j.user && j.user.id)) {
+          return { ok: true, msg: "注册成功，请登录", autoLogin: false };
+        }
+        return { ok: false, msg: "注册失败，返回数据异常" };
+      });
+  }
+
+  // 注册入口：校验 + 拼邮箱 + 调 signupRaw
+  function register(account, name, password) {
+    var acct = (account || "").trim();
+    var nm = (name || "").trim();
+    var pw = password || "";
+    if (!acct) return Promise.resolve({ ok: false, msg: "请输入账号" });
+    if (!nm) return Promise.resolve({ ok: false, msg: "请输入姓名" });
+    if (pw.length < 6) return Promise.resolve({ ok: false, msg: "密码至少 6 位" });
+    var email = resolveEmail(acct);
+    return signupRaw(email, pw, nm);
+  }
+
+  // 拉取所有 profiles（需要 profiles public read RLS；没开则返回空数组）
+  function listProfiles() {
+    if (!BASE || !KEY) return Promise.resolve([]);
+    var url = BASE + "/rest/v1/profiles?select=name,role,email&order=name.asc";
+    var token = accessToken();
+    var headers = apiHeaders(token);
+    return fetch(url, { headers: headers })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (arr) { return Array.isArray(arr) ? arr : []; })
+      .catch(function () { return []; });
+  }
+
+
   function applySession() {
     var s = loadSession();
     if (s) { WOMS.role = s.role || "assignee"; WOMS.currentUser = s.name || ""; }
@@ -129,6 +201,7 @@
   WOMS.auth = {
     login: login, logout: logout, current: current, isLoggedIn: isLoggedIn,
     applySession: applySession, verifySession: verifySession,
-    accessToken: accessToken, fetchProfile: fetchProfile, accountMap: ACCOUNT_MAP
+    accessToken: accessToken, fetchProfile: fetchProfile, accountMap: ACCOUNT_MAP,
+    register: register, listProfiles: listProfiles
   };
 })();

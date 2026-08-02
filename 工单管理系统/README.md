@@ -97,10 +97,31 @@ WOMS.sync.pushNow()       // 推送当前 localStorage 全部数据
 - 数据存储于浏览器 localStorage，键名 `woms_data_v1`。
 - 图表为手写 SVG。
 
-## 登录功能
+## 登录与权限
 PC 管理端需登录后使用；移动 H5 仅只读查询，无需登录。
+
+### 账号
 - 管理员：账号 `admin`，密码 `admin123`
-- 处理员：账号为处理人姓名（张伟/李娜/王强/刘洋/陈静），密码统一 `123456`
+- 处理员：账号为处理人姓名（zhangwei / lina / wangqiang / liuyang / chenjing），密码统一 `123456`
 - 登录态保存在浏览器 localStorage（键 `woms_session_v1`），刷新后保持；右上角「退出」注销。
-- 权限：管理员可管理全部工单；处理员只能编辑/完成/驳回本人工单。
-- 说明：本项目为纯前端演示登录（无 CDN/无后端/可离线），非真实安全认证。如需真实鉴权，需接入后端或 Supabase Auth。
+
+### 注册新账号
+登录页有「注册」Tab：填姓名 + 账号 + 密码（≥6 位）+ 确认密码即可。
+- 提交后通过 Supabase GoTrue 创建账号，密码由服务端校验，触发器自动建 `profiles`（role=assignee, name=姓名）
+- 默认不开邮箱确认：注册成功后自动登录进入系统
+- 新账号权限默认为处理员（仅本人工单可读写）；需要更高权限请用 Supabase Dashboard 手动 `update profiles set role='admin' where email='xxx@woms.cn'`
+
+### 归属处理人下拉框来源
+工单新建/编辑/分配弹窗里的「归属处理人」下拉，候选从三路合并：
+1. 硬编码 5 名初始处理人（永远兜底）
+2. 已注册用户 profiles（依赖 `tools/auth_schema.sql` 里的 `profiles public read` 策略）
+3. 已存在工单上的 `assignee` 历史值（即使 profile 被删也不影响旧单归属）
+任一来源失败/无数据都会自动回退到下一路，确保功能可用。
+
+### 权限
+- 管理员：可读/写全部工单；可分配、关闭、恢复、彻底删除
+- 处理员：仅本人工单（`assignee` 等于 profiles.name）可读/写/删；其他工单可见只读
+
+### 真实鉴权
+登录用 Supabase GoTrue 直连（`/auth/v1/token?grant_type=password`）；session 含 JWT（access_token），前端用 Bearer 调 PostgREST，由 RLS 在数据库侧强制权限。
+说明：注册依赖 `tools/auth_schema.sql` 里的 `profiles public read` 策略；如果该 SQL 未在 Supabase Dashboard 跑过，新注册用户不会出现在下拉框（仍可登录，硬编码兜底可用）。

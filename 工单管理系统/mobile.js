@@ -43,6 +43,15 @@
     return s.join("");
   }
 
+  // 移动端动态处理人：硬编码 + 工单 assignee distinct（移动端匿名访问）
+  function getMobileAssignees() {
+    var names = [], seen = Object.create(null);
+    function add(n) { n = (n || "").trim(); if (!n || seen[n]) return; seen[n] = 1; names.push(n); }
+    (WOMS.ENUMS.assignees || []).forEach(add);
+    try { (WOMS.data.load().tickets || []).forEach(function (t) { add(t.assignee); }); } catch (e) {}
+    return names;
+  }
+
   var mstate = { view: "list", filters: { type: "", status: "", assignee: "" }, detailId: null };
 
   function filtered() {
@@ -94,7 +103,7 @@
       '<div class="m-filters">' +
         '<div class="m-filter-row"><label>工单类型</label><select id="mf-type">' + opt(f.type, WOMS.ENUMS.types, "全部类型") + '</select></div>' +
         '<div class="m-filter-row"><label>完成状态</label><select id="mf-status">' + opt(f.status, WOMS.ENUMS.statuses, "全部状态") + '</select></div>' +
-        '<div class="m-filter-row"><label>归属处理人</label><select id="mf-assignee">' + opt(f.assignee, WOMS.ENUMS.assignees, "全部处理人") + '</select></div>' +
+        '<div class="m-filter-row"><label>归属处理人</label><select id="mf-assignee">' + opt(f.assignee, getMobileAssignees(), "全部处理人") + '</select></div>' +
       '</div>' +
       '<div class="m-list">' + cards + '</div>' +
       '<div style="text-align:center;color:#9ca3af;font-size:12px;padding:8px 0 24px">共 ' + list.length + ' 条 · 仅查询，不可编辑</div>';

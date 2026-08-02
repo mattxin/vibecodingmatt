@@ -21,6 +21,13 @@ drop policy if exists "profiles read own" on public.profiles;
 create policy "profiles read own" on public.profiles
   for select using (auth.uid() = id);
 
+-- 公开读：归属处理人下拉框需要列出所有已注册用户。
+-- 表里只有 id/email/role/name/created_at；id 与 email 在 auth.users 也能拿到，
+-- 这一策略仅放开 select，不暴露写权限。
+drop policy if exists "profiles public read" on public.profiles;
+create policy "profiles public read" on public.profiles
+  for select using (true);
+
 -- ---------- 2. 触发器：新用户注册自动建 profile ----------
 create or replace function public.handle_new_user()
 returns trigger

@@ -326,6 +326,41 @@ tbody tr:last-child td { border-bottom: none; }
   line-height: 1.6;
 }
 
+
+/* ---------- 注册 Tab ---------- */
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: #F5F6F8;
+  border-radius: 10px;
+  padding: 4px;
+  margin: 12px 0 4px;
+}
+.auth-tab {
+  flex: 1;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.auth-tab:hover { color: #1f2233; }
+.auth-tab.active {
+  background: #fff;
+  color: #2B2BFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.login-field .req { color: #dc2626; margin-left: 2px; }
+.login-ok {
+  color: #16a34a;
+  font-size: 13px;
+  min-height: 18px;
+}
+
 /* ---------- 会话信息 ---------- */
 .session-info {
   display: flex;
